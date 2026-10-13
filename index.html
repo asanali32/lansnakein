@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snake — My Dictionary</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 20px;
+    background: #101827;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+h1 {
+    color: #65f5a5;
+}
+
+.container {
+    max-width: 750px;
+    margin: auto;
+}
+
+.panel {
+    background: #1b2940;
+    border: 1px solid #34435c;
+    border-radius: 14px;
+    padding: 18px;
+    margin: 15px auto;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    margin: 6px 0;
+    border: 1px solid #52627b;
+    border-radius: 8px;
+    background: #101827;
+    color: white;
+    font-size: 16px;
+}
+
+button {
+    padding: 11px 16px;
+    margin: 5px;
+    border: none;
+    border-radius: 8px;
+    background: #65f5a5;
+    color: #101827;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #3ed58a;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.delete {
+    background: #ff7272;
+}
+
+.secondary {
+    background: #52627b;
+    color: white;
+}
+
+#wordList {
+    text-align: left;
+    padding: 0;
+    list-style: none;
+}
+
+#wordList li {
+    background: #101827;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 7px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    overflow-wrap: anywhere;
+}
+
+.word-text {
+    flex: 1;
+}
+
+#game {
+    display: none;
+}
+
+canvas {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    background: #172438;
+    border: 3px solid #65f5a5;
+    border-radius: 10px;
+    touch-action: none;
+}
+
+.stats {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    font-size: 18px;
+    margin: 15px;
+}
+
+#questionBox {
+    display: none;
+    background: #1b2940;
+    padding: 20px;
+    border: 2px solid #65f5a5;
+    border-radius: 12px;
+    margin: 15px auto;
+    max-width: 500px;
+}
+
+#questionText {
+    font-size: 24px;
+    overflow-wrap: anywhere;
+}
+
+#answerInput {
+    text-align: center;
+}
+
+#feedback {
+    min-height: 25px;
+    font-weight: bold;
+}
+
+#message {
+    color: #ffd166;
+    min-height: 25px;
+}
+
+.controls {
+    display: grid;
+    grid-template-columns: repeat(3, 60px);
+    justify-content: center;
+    gap: 5px;
+    margin: 12px;
+}
+
+.controls button {
+    margin: 0;
+    font-size: 20px;
+}
+
+.small {
+    color: #b9c5d8;
+    font-size: 13px;
+}
+
+.hidden {
+    display: none !important;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>🐍 My Dictionary Snake</h1>
+<p>Создай свой словарь на любом языке и учи слова, играя!</p>
+
+<!-- СОЗДАНИЕ СОБСТВЕННОГО СЛОВАРЯ -->
+<section id="dictionaryPanel" class="panel">
+    <h2>📚 Мой словарь</h2>
+
+    <p class="small">
+        Напиши слово и его перевод. Можно использовать любые языки:
+        English, русский, қазақша, 中文, 日本語 и другие.
+    </p>
+
+    <input id="wordInput"
+           type="text"
+           placeholder="Слово, например: Apple">
+
+    <input id="translationInput"
+           type="text"
+           placeholder="Перевод, например: Яблоко">
+
+    <button id="addWordBtn">➕ Добавить слово</button>
+
+    <p id="dictionaryMessage" class="small"></p>
+
+    <h3>Мои слова: <span id="wordCount">0</span></h3>
+
+    <ul id="wordList"></ul>
+
+    <button id="startBtn">▶ НАЧАТЬ ИГРУ</button>
+    <button id="clearBtn" class="secondary">Очистить словарь</button>
+</section>
+
+<!-- ИГРА -->
+<section id="game">
+    <div class="stats">
+        <div>🍎 Очки: <span id="score">0</span></div>
+        <div>📖 Выучено: <span id="learned">0</span></div>
+    </div>
+
+    <canvas id="canvas" width="400" height="400"></canvas>
+
+    <p id="message">Съешь яблоко, чтобы получить вопрос!</p>
+
+    <button id="pauseBtn">⏸ Пауза</button>
+    <button id="backBtn" class="secondary">← К словарю</button>
+
+    <div class="controls">
+        <div></div>
+        <button data-dir="up">⬆️</button>
+        <div></div>
+        <button data-dir="left">⬅️</button>
+        <button data-dir="down">⬇️</button>
+        <button data-dir="right">➡️</button>
+    </div>
+</section>
+
+<!-- ВОПРОС ИЗ СОБСТВЕННОГО СЛОВАРЯ -->
+<section id="questionBox">
+    <h2>🧠 Проверь себя!</h2>
+
+    <p class="small" id="questionDirection">
+        Напиши перевод слова:
+    </p>
+
+    <h3 id="questionText"></h3>
+
+    <form id="answerForm">
+        <input id="answerInput"
+               type="text"
+               placeholder="Напиши свой ответ..."
+               autocomplete="off"
+               required>
+
+        <button type="submit">Проверить ответ</button>
+    </form>
+
+    <p id="feedback"></p>
+    <button id="continueBtn" class="hidden">
+        Продолжить игру →
+    </button>
+</section>
+
+</div>
+
+<script>
+// ========================================
+// 1. СОБСТВЕННЫЙ СЛОВАРЬ
+// ========================================
+
+const STORAGE_KEY = "my_dictionary_snake_v1";
+
+const wordInput = document.getElementById("wordInput");
+const translationInput = document.getElementById("translationInput");
+const wordList = document.getElementById("wordList");
+const wordCount = document.getElementById("wordCount");
+const dictionaryMessage = document.getElementById("dictionaryMessage");
+
+let dictionary = loadDictionary();
+
+function loadDictionary() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        const parsed = saved ? JSON.parse(saved) : [];
+
+        if (!Array.isArray(parsed)) return [];
+
+        return parsed.filter(item =>
+            item &&
+            typeof item.word === "string" &&
+            typeof item.translation === "string"
+        );
+    } catch (error) {
+        return [];
+    }
+}
+
+function saveDictionary() {
+    try {
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(dictionary)
+        );
+        return true;
+    } catch (error) {
+        dictionaryMessage.textContent =
+            "Не удалось сохранить словарь в браузере.";
+        return false;
+    }
+}
+
+function renderDictionary() {
+    wordList.innerHTML = "";
+    wordCount.textContent = dictionary.length;
+
+    dictionary.forEach((item, index) => {
+        const li = document.createElement("li");
+
+        const text = document.createElement("span");
+        text.className = "word-text";
+        text.textContent =
+            item.word + " — " + item.translation;
+
+        const remove = document.createElement("button");
+        remove.textContent = "✖";
+        remove.className = "delete";
+        remove.title = "Удалить слово";
+
+        remove.addEventListener("click", () => {
+            dictionary.splice(index, 1);
+            saveDictionary();
+            renderDictionary();
+            dictionaryMessage.textContent = "Слово удалено.";
+
+            if (dictionary.length === 0 &&
+                document.getElementById("game").style.display === "block") {
+                stopGame();
+            }
+        });
+
+        li.appendChild(text);
+        li.appendChild(remove);
+        wordList.appendChild(li);
+    });
+}
+
+document.getElementById("addWordBtn").addEventListener("click", () => {
+    const word = wordInput.value.trim();
+    const translation = translationInput.value.trim();
+
+    if (!word || !translation) {
+        dictionaryMessage.textContent =
+            "Заполни оба поля: слово и перевод.";
+        return;
+    }
+
+    const duplicate = dictionary.some(item =>
+        item.word.toLocaleLowerCase() === word.toLocaleLowerCase() &&
+        item.translation.toLocaleLowerCase() ===
+            translation.toLocaleLowerCase()
+    );
+
+    if (duplicate) {
+        dictionaryMessage.textContent =
+            "Это слово с таким переводом уже есть.";
+        return;
+    }
+
+    dictionary.push({ word, translation });
+
+    saveDictionary();
+    renderDictionary();
+
+    wordInput.value = "";
+    translationInput.value = "";
+    wordInput.focus();
+
+    dictionaryMessage.textContent = "✅ Слово добавлено!";
+});
+
+[ wordInput, translationInput ].forEach(input => {
+    input.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            document.getElementById("addWordBtn").click();
+        }
+    });
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+    if (!dictionary.length) return;
+
+    if (confirm("Удалить весь свой словарь?")) {
+        dictionary = [];
+        saveDictionary();
+        renderDictionary();
+        dictionaryMessage.textContent = "Словарь очищен.";
+    }
+});
+
+renderDictionary();
+
+
+// ========================================
+// 2. НАСТРОЙКИ ИГРЫ
+// ========================================
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const CELL = 20;
+const COUNT = canvas.width / CELL;
+
+let snake = [];
+let direction = { x: 1, y: 0 };
+let nextDirection = { x: 1, y: 0 };
+let food = { x: 15, y: 10 };
+
+let score = 0;
+let learned = 0;
+
+let running = false;
+let paused = false;
+let waiting = false;
+let answerChecked = false;
+
+let timer = null;
+let currentWord = null;
+let questionMode = "translation";
+
+// Слова, которые уже использовались в этой игре.
+// Каждое слово задаётся по очереди, без повторов.
+let remainingWords = [];
+
+function shuffle(array) {
+    const result = [...array];
+
+    for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+    }
+
+    return result;
+}
+
+function resetWordQueue() {
+    remainingWords = shuffle(
+        dictionary.map((_, index) => index)
+    );
+}
+
+function getNextWord() {
+    if (remainingWords.length === 0) {
+        resetWordQueue();
+    }
+
+    const index = remainingWords.pop();
+
+    return dictionary[index];
+}
+
+function randomFood() {
+    let position;
+
+    do {
+        position = {
+            x: Math.floor(Math.random() * COUNT),
+            y: Math.floor(Math.random() * COUNT)
+        };
+    } while (
+        snake.some(part =>
+            part.x === position.x &&
+            part.y === position.y
+        )
+    );
+
+    return position;
+}
+
+
+// ========================================
+// 3. ЗАПУСК И ОСТАНОВКА
+// ========================================
+
+function startGame() {
+    if (dictionary.length < 1) {
+        dictionaryMessage.textContent =
+            "Сначала добавь хотя бы одно слово!";
+        return;
+    }
+
+    clearInterval(timer);
+
+    document.getElementById("dictionaryPanel").style.display = "none";
+    document.getElementById("game").style.display = "block";
+    document.getElementById("questionBox").style.display = "none";
+
+    snake = [
+        { x: 10, y: 10 },
+        { x: 9, y: 10 },
+        { x: 8, y: 10 }
+    ];
+
+    direction = { x: 1, y: 0 };
+    nextDirection = { x: 1, y: 0 };
+
+    score = 0;
+    learned = 0;
+
+    running = true;
+    paused = false;
+    waiting = false;
+    answerChecked = false;
+
+    resetWordQueue();
+
+    food = randomFood();
+
+    document.getElementById("score").textContent = score;
+    document.getElementById("learned").textContent = learned;
+    document.getElementById("pauseBtn").textContent = "⏸ Пауза";
+
+    document.getElementById("message").textContent =
+        "Съешь яблоко 🍎 и ответь по своему словарю!";
+
+    draw();
+
+    timer = setInterval(gameLoop, 125);
+}
+
+function stopGame() {
+    running = false;
+    clearInterval(timer);
+
+    document.getElementById("game").style.display = "none";
+    document.getElementById("questionBox").style.display = "none";
+    document.getElementById("dictionaryPanel").style.display = "block";
+}
+
+document.getElementById("startBtn").addEventListener("click", startGame);
+document.getElementById("backBtn").addEventListener("click", stopGame);
+
+
+// ========================================
+// 4. ДВИЖЕНИЕ ЗМЕЙКИ
+// ========================================
+
+function gameLoop() {
+    if (!running || paused || waiting) return;
+
+    direction = nextDirection;
+
+    const head = {
+        x: snake[0].x + direction.x,
+        y: snake[0].y + direction.y
+    };
+
+    if (
+        head.x < 0 || head.x >= COUNT ||
+        head.y < 0 || head.y >= COUNT
+    ) {
+        gameOver("Ты врезался в стену!");
+        return;
+    }
+
+    const eating = head.x === food.x && head.y === food.y;
+
+    const body = eating ? snake : snake.slice(0, -1);
+
+    if (body.some(part =>
+        part.x === head.x && part.y === head.y
+    )) {
+        gameOver("Змея столкнулась сама с собой!");
+        return;
+    }
+
+    snake.unshift(head);
+
+    if (eating) {
+        score += 10;
+        document.getElementById("score").textContent = score;
+
+        food = randomFood();
+        draw();
+        showQuestion();
+        return;
+    }
+
+    snake.pop();
+    draw();
+}
+
+function changeDirection(name) {
+    if (!running || paused || waiting) return;
+
+    const directions = {
+        up: { x: 0, y: -1 },
+        down: { x: 0, y: 1 },
+        left: { x: -1, y: 0 },
+        right: { x: 1, y: 0 }
+    };
+
+    const newDirection = directions[name];
+    if (!newDirection) return;
+
+    if (
+        newDirection.x === -direction.x &&
+        newDirection.y === -direction.y
+    ) {
+        return;
+    }
+
+    nextDirection = newDirection;
+}
+
+document.addEventListener("keydown", event => {
+    const keys = {
+        ArrowUp: "up",
+        ArrowDown: "down",
+        ArrowLeft: "left",
+        ArrowRight: "right",
+        w: "up",
+        W: "up",
+        s: "down",
+        S: "down",
+        a: "left",
+        A: "left",
+        d: "right",
+        D: "right"
+    };
+
+    if (keys[event.key]) {
+        event.preventDefault();
+        changeDirection(keys[event.key]);
+    }
+
+    if (event.code === "Space") {
+        event.preventDefault();
+        togglePause();
+    }
+});
+
+document.querySelectorAll("[data-dir]").forEach(button => {
+    button.addEventListener("click", () => {
+        changeDirection(button.dataset.dir);
+    });
+});
+
+function togglePause() {
+    if (!running || waiting) return;
+
+    paused = !paused;
+
+    document.getElementById("pauseBtn").textContent =
+        paused ? "▶ Продолжить" : "⏸ Пауза";
+
+    document.getElementById("message").textContent =
+        paused ? "Игра на паузе." : "Продолжай игру!";
+}
+
+document.getElementById("pauseBtn").addEventListener("click", togglePause);
+
+
+// ========================================
+// 5. РИСОВАНИЕ
+// ========================================
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = "#223149";
+    ctx.lineWidth = 0.5;
+
+    for (let i = 0; i <= COUNT; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * CELL, 0);
+        ctx.lineTo(i * CELL, canvas.height);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, i * CELL);
+        ctx.lineTo(canvas.width, i * CELL);
+        ctx.stroke();
+    }
+
+    ctx.font = "18px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    ctx.fillText(
+        "🍎",
+        food.x * CELL + CELL / 2,
+        food.y * CELL + CELL / 2
+    );
+
+    snake.forEach((part, index) => {
+        ctx.fillStyle = index === 0 ? "#a0ffbd" : "#40d987";
+
+        ctx.beginPath();
+        ctx.roundRect(
+            part.x * CELL + 2,
+            part.y * CELL + 2,
+            CELL - 4,
+            CELL - 4,
+            5
+        );
+        ctx.fill();
+
+        if (index === 0) {
+            ctx.fillStyle = "#101827";
+
+            const cx = part.x * CELL + CELL / 2;
+            const cy = part.y * CELL + CELL / 2;
+
+            let ex1 = cx;
+            let ey1 = cy;
+            let ex2 = cx;
+            let ey2 = cy;
+
+            if (direction.x !== 0) {
+                ex1 += direction.x * 4;
+                ex2 += direction.x * 4;
+                ey1 -= 4;
+                ey2 += 4;
+            } else {
+                ey1 += direction.y * 4;
+                ey2 += direction.y * 4;
+                ex1 -= 4;
+                ex2 += 4;
+            }
+
+            ctx.beginPath();
+            ctx.arc(ex1, ey1, 2, 0, Math.PI * 2);
+            ctx.arc(ex2, ey2, 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    });
+}
+
+
+// ========================================
+// 6. ВОПРОСЫ ИЗ СОБСТВЕННОГО СЛОВАРЯ
+// ========================================
+
+function showQuestion() {
+    if (dictionary.length === 0) {
+        gameOver("В словаре больше нет слов.");
+        return;
+    }
+
+    waiting = true;
+    answerChecked = false;
+
+    currentWord = getNextWord();
+
+    // Иногда спросим перевод слова,
+    // иногда — само слово по переводу.
+    questionMode = Math.random() < 0.5
+        ? "translation"
+        : "word";
+
+    const questionDirection = document.getElementById("questionDirection");
+    const questionText = document.getElementById("questionText");
+    const answerInput = document.getElementById("answerInput");
+    const feedback = document.getElementById("feedback");
+    const continueBtn = document.getElementById("continueBtn");
+
+    if (questionMode === "translation") {
+        questionDirection.textContent = "Напиши перевод этого слова:";
+        questionText.textContent = currentWord.word;
+    } else {
+        questionDirection.textContent = "Какое слово соответствует этому переводу?";
+        questionText.textContent = currentWord.translation;
+    }
+
+    answerInput.value = "";
+    answerInput.disabled = false;
+
+    feedback.textContent = "";
+    feedback.style.color = "#ffffff";
+
+    continueBtn.classList.add("hidden");
+
+    document.getElementById("questionBox").style.display = "block";
+
+    document.getElementById("message").textContent =
+        "Ответь на вопрос, чтобы продолжить!";
+
+    answerInput.focus();
+}
+
+function normalizeAnswer(text) {
+    return text
+        .normalize("NFC")
+        .trim()
+        .toLocaleLowerCase()
+        .replace(/\s+/g, " ");
+}
+
+document.getElementById("answerForm").addEventListener("submit", event => {
+    event.preventDefault();
+
+    if (!waiting || answerChecked || !currentWord) return;
+
+    const answer = normalizeAnswer(
+        document.getElementById("answerInput").value
+    );
+
+    const correctAnswer = normalizeAnswer(
+        questionMode === "translation"
+            ? currentWord.translation
+            : currentWord.word
+    );
+
+    const feedback = document.getElementById("feedback");
+    const answerInput = document.getElementById("answerInput");
+
+    answerChecked = true;
+    answerInput.disabled = true;
+
+    if (answer === correctAnswer) {
+        score += 5;
+        learned += 1;
+
+        document.getElementById("score").textContent = score;
+        document.getElementById("learned").textContent = learned;
+
+        feedback.textContent = "✅ Правильно! +5 очков!";
+        feedback.style.color = "#65f5a5";
+    } else {
+        const expected = questionMode === "translation"
+            ? currentWord.translation
+            : currentWord.word;
+
+        feedback.textContent = "❌ Правильный ответ: " + expected;
+        feedback.style.color = "#ff8585";
+    }
+
+    document.getElementById("continueBtn").classList.remove("hidden");
+});
+
+document.getElementById("continueBtn").addEventListener("click", () => {
+    if (!waiting) return;
+
+    waiting = false;
+    answerChecked = false;
+
+    document.getElementById("questionBox").style.display = "none";
+    document.getElementById("message").textContent =
+        "Продолжай! Найди следующее яблоко 🍎";
+
+    draw();
+});
+
+
+// ========================================
+// 7. КОНЕЦ ИГРЫ
+// ========================================
+
+function gameOver(reason) {
+    running = false;
+    clearInterval(timer);
+
+    waiting = false;
+
+    document.getElementById("questionBox").style.display = "none";
+
+    document.getElementById("message").textContent =
+        "GAME OVER! " + reason + " Твой счёт: " + score;
+
+    setTimeout(() => {
+        if (document.getElementById("game").style.display === "block") {
+            alert("Игра окончена!\n" + reason + "\nОчки: " + score);
+        }
+    }, 50);
+}
+
+</script>
+</body>
+</html>
